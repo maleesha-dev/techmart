@@ -23,13 +23,13 @@
         <dependency>
             <groupId>lk.novasphere</groupId>
             <artifactId>techmart-ejb</artifactId>
-            <version>1.0</version>
-            <type>ejb</type>
+            <version>${project.version}</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>lk.novasphere</groupId>
             <artifactId>techmart-web</artifactId>
-            <version>1.0</version>
+            <version>${project.version}</version>
             <type>war</type>
         </dependency>
     </dependencies>
@@ -40,20 +40,22 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-ear-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>${maven-ear-plugin.version}</version>
                 <configuration>
+                    <version>8</version>
                     <defaultLibBundleDir>lib</defaultLibBundleDir>
                     <modules>
                         <ejbModule>
                             <groupId>lk.novasphere</groupId>
                             <artifactId>techmart-ejb</artifactId>
                             <bundleFileName>techmart-ejb.jar</bundleFileName>
+                            <type>jar</type>
                         </ejbModule>
                         <webModule>
                             <groupId>lk.novasphere</groupId>
                             <artifactId>techmart-web</artifactId>
                             <bundleFileName>techmart-web.war</bundleFileName>
-                            <contextRoot>/techmart-web</contextRoot>
+                            <contextRoot>/techmart</contextRoot>
                         </webModule>
                     </modules>
                 </configuration>
