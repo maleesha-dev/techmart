@@ -9,6 +9,7 @@
     <version>1.0</version>
     <packaging>pom</packaging>
     <name>techmart</name>
+
     <modules>
         <module>techmart-ejb</module>
         <module>techmart-web</module>
@@ -22,6 +23,7 @@
         <jakarta.jakartaee-api.version>10.0.0</jakarta.jakartaee-api.version>
         <maven-war-plugin.version>3.4.0</maven-war-plugin.version>
         <maven-ear-plugin.version>3.3.0</maven-ear-plugin.version>
+        <maven-ejb-plugin.version>3.2.1</maven-ejb-plugin.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
     </properties>
 
@@ -43,7 +45,7 @@
                 <groupId>lk.novasphere</groupId>
                 <artifactId>techmart-ejb</artifactId>
                 <version>1.0</version>
-                <type>jar</type>
+                <type>ejb</type>
             </dependency>
             <dependency>
                 <groupId>lk.novasphere</groupId>
@@ -67,5 +69,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

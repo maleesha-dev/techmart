@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>techmart-ejb</artifactId>
-    <packaging>jar</packaging>
+    <packaging>ejb</packaging>
     <name>techmart-ejb</name>
 
     <properties>
@@ -37,8 +37,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-ejb-plugin</artifactId>
+                <version>${maven-ejb-plugin.version}</version>
+                <configuration>
+                    <ejbVersion>3.2</ejbVersion>
+                </configuration>
             </plugin>
         </plugins>
     </build>
-
 </project>

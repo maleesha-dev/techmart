@@ -19,10 +19,8 @@ public class InventoryCache {
     private final Map<Long, Integer> stockCache = new ConcurrentHashMap<>();
 
     @PostConstruct
-    public void init() {    //Sample data
-        stockCache.put(1L, 50);
-        stockCache.put(2L, 100);
-        System.out.println("InventoryCache Initialized With Sample Data...");
+    public void init() {
+        System.out.println("InventoryCache Initialized...");
     }
 
     @Lock(LockType.READ)

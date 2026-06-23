@@ -28,7 +28,9 @@ public class ProductService {
         List<Product> products = em.createQuery("SELECT p FROM Product p", Product.class).getResultList();
 
         for (Product p : products) {
-            p.setStock(inventoryCache.getStock(p.getId()));
+            if (p.getStock() != null) {
+                inventoryCache.updateStock(p.getId(), p.getStock());
+            }
         }
         return products;
     }
@@ -36,7 +38,12 @@ public class ProductService {
     public Product getProductById(Long id) {
         Product product = em.find(Product.class, id);
         if (product != null) {
-            product.setStock(inventoryCache.getStock(id));
+            Integer cachedStock = inventoryCache.getStock(id);
+            if (cachedStock == 0 && product.getStock() != null && product.getStock() > 0) {
+                inventoryCache.updateStock(id, product.getStock());
+            } else {
+                product.setStock(cachedStock);
+            }
         }
         return product;
     }

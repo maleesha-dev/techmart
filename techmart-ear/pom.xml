@@ -24,7 +24,7 @@
             <groupId>lk.novasphere</groupId>
             <artifactId>techmart-ejb</artifactId>
             <version>${project.version}</version>
-            <type>jar</type>
+            <type>ejb</type>
         </dependency>
         <dependency>
             <groupId>lk.novasphere</groupId>
@@ -49,7 +49,6 @@
                             <groupId>lk.novasphere</groupId>
                             <artifactId>techmart-ejb</artifactId>
                             <bundleFileName>techmart-ejb.jar</bundleFileName>
-                            <type>jar</type>
                         </ejbModule>
                         <webModule>
                             <groupId>lk.novasphere</groupId>
@@ -62,5 +61,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

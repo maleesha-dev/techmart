@@ -21,7 +21,7 @@ public class Product implements Serializable {
     @Column(nullable = false)
     private Integer stock;
 
-    public Product() {
+    public Product(String name, Double price, Integer stock) {
     }
 
     public Product(Long id, String name, Double price, Integer stock) {
@@ -29,6 +29,9 @@ public class Product implements Serializable {
         this.name = name;
         this.price = price;
         this.stock = stock;
+    }
+
+    public Product() {
     }
 
     public Long getId() {
