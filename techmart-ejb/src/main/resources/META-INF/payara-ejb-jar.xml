@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<payara-ejb-jar xmlns="http://payara.fish/schema/payara-ejb-jar"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://payara.fish/schema/payara-ejb-jar http://payara.fish/schema/payara-ejb-jar_4_0.xsd"
+                version="4.0">
+    <enterprise-beans>
+        <ejb>
+            <ejb-name>NotificationMDB</ejb-name>
+            <mdb-resource-adapter>
+                <resource-adapter-mid>activemq-rar-6.2.6</resource-adapter-mid>
+            </mdb-resource-adapter>
+        </ejb>
+    </enterprise-beans>
+</payara-ejb-jar>

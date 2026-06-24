@@ -1,74 +1,99 @@
 package lk.novasphere.techmart.service;
 
-import jakarta.ejb.Asynchronous;
+import jakarta.annotation.Resource;
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
-import jakarta.inject.Inject;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSConnectionFactoryDefinition;
+import jakarta.jms.JMSContext;
+import jakarta.jms.Queue;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lk.novasphere.techmart.entity.Order;
-import lk.novasphere.techmart.entity.Notification;
-import java.util.Date;
-import java.util.concurrent.Future;
-import jakarta.ejb.AsyncResult;
-import java.util.logging.Logger;
+import lk.novasphere.techmart.entity.Product;
 
+import java.util.Map;
+
+
+@JMSConnectionFactoryDefinition(
+        name = "java:app/jms/ActiveMQConnectionFactory",
+        resourceAdapter = "activemq-rar-6.2.6"
+)
 @Stateless
 public class OrderService {
 
-    private static final Logger LOGGER =
-            Logger.getLogger(OrderService.class.getName());
-
-    @PersistenceContext(unitName = "TechMartPU")
+    @PersistenceContext
     private EntityManager em;
 
-    @Inject
+    @EJB
     private InventoryCache inventoryCache;
 
-    public Order checkout(String customerName, java.util.Map<Long, Integer> cartItems) {
 
-        Double totalAmount = 0.0;
+    @Resource(lookup = "jms/__defaultConnectionFactory")
+    private ConnectionFactory activeMQFactory;
+
+    @Resource(lookup = "jms/OrderQueue")
+    private Queue notificationQueue;
+
+    public Order checkout(String customerName, Map<Long, Integer> cartItems) {
         Order order = new Order();
         order.setCustomerName(customerName);
         order.setStatus("PENDING");
 
-        for (java.util.Map.Entry<Long, Integer> item : cartItems.entrySet()) {
-            boolean success = inventoryCache.deductStock(item.getKey(), item.getValue());
-            if (!success) {
-                order.setStatus("FAILED");
-                LOGGER.warning("Order Failed: Out of stock for Product ID: " + item.getKey());
-                return order;
+        double totalAmount = 0.0;
+        boolean isStockAvailable = true;
+
+        for (Map.Entry<Long, Integer> entry : cartItems.entrySet()) {
+            Long productId = entry.getKey();
+            Integer orderQty = entry.getValue();
+
+            Product product = em.find(Product.class, productId);
+            if (product == null || product.getStock() < orderQty) {
+                isStockAvailable = false;
+                break;
             }
-            totalAmount += (item.getValue() * 100.0);
         }
 
-        order.setTotalAmount(totalAmount);
-        order.setStatus("COMPLETED");
+        if (isStockAvailable) {
+            for (Map.Entry<Long, Integer> entry : cartItems.entrySet()) {
+                Long productId = entry.getKey();
+                Integer orderQty = entry.getValue();
 
-        em.persist(order);
-        em.flush();
+                Product product = em.find(Product.class, productId);
 
-        LOGGER.info("Order Successfully Placed! Order ID: " + order.getId());
+                totalAmount += product.getPrice() * orderQty;
 
-        sendOrderNotification(order.getId());
+                int newStock = product.getStock() - orderQty;
+                product.setStock(newStock);
+                em.merge(product);
+
+                inventoryCache.updateStock(productId, newStock);
+            }
+
+            order.setTotalAmount(totalAmount);
+            order.setStatus("COMPLETED");
+
+            em.persist(order);
+            em.flush();
+
+            try {
+                String messagePayload = "OrderID:" + order.getId() + "|Customer:" + customerName + "|Amount:" + totalAmount;
+
+
+                try (JMSContext jmsContext = activeMQFactory.createContext()) {
+                    jmsContext.createProducer().send(notificationQueue, messagePayload);
+                }
+
+                System.out.println("Order success message sent to OrderQueue: " + messagePayload);
+
+            } catch (Exception e) {
+                System.err.println("Producer Error: " + e.getMessage());
+            }
+
+        } else {
+            order.setStatus("FAILED");
+        }
 
         return order;
-    }
-
-    @Asynchronous
-    public Future<String> sendOrderNotification(Long orderId) {
-        long startTime = System.currentTimeMillis();
-        try {
-            Thread.sleep(3000);
-
-            Notification notification = new Notification(orderId, "Your TechMart Order #" + orderId + " has been processed successfully!");
-            em.persist(notification);
-
-            long endTime = System.currentTimeMillis();
-            LOGGER.info("Notification sent for Order #" + orderId + " (Took " + (endTime - startTime) + "ms)");
-
-            return new AsyncResult<>("Notification Sent Successfully");
-        } catch (InterruptedException e) {
-            return new AsyncResult<>("Notification Failed");
-        }
     }
 }

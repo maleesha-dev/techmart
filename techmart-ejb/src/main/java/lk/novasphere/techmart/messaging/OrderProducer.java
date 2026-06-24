@@ -2,9 +2,8 @@ package lk.novasphere.techmart.messaging;
 
 import jakarta.annotation.Resource;
 import jakarta.ejb.Stateless;
-import jakarta.jms.ConnectionFactory;
-import jakarta.jms.JMSContext;
-import jakarta.jms.Queue;
+import jakarta.jms.*;
+
 import java.util.logging.Logger;
 
 @Stateless
@@ -12,22 +11,38 @@ public class OrderProducer {
 
     private static final Logger LOGGER = Logger.getLogger(OrderProducer.class.getName());
 
+
     @Resource(lookup = "jms/TechMartConnectionFactory")
     private ConnectionFactory connectionFactory;
+
 
     @Resource(lookup = "jms/OrderQueue")
     private Queue queue;
 
-    public void sendOrderMessage(Long orderId, String messageBody) {
+    public void sendOrderMessage(Long orderId, String customerEmail, double amount) {
+        Connection connection = null;
         try {
-            JMSContext context = connectionFactory.createContext();
+            connection = connectionFactory.createConnection();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            MessageProducer producer = session.createProducer(queue);
 
-            String fullMessage = orderId + ":" + messageBody;
-            context.createProducer().send(queue, fullMessage);
+            String fullMessage = "OrderId:" + orderId + "|Customer:" + customerEmail + "|Amount:" + amount;
+            TextMessage textMessage = session.createTextMessage(fullMessage);
 
-            LOGGER.info("Message successfully pushed to OrderQueue for Order #" + orderId);
+            producer.send(textMessage);
+            LOGGER.info("🟢 Message successfully pushed to OrderQueue for Order #" + orderId);
+
         } catch (Exception e) {
-            LOGGER.severe("Message sending failed: " + e.getMessage());
+            LOGGER.severe("🔴 Message sending failed: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (JMSException e) {
+                    LOGGER.severe("Failed to close connection: " + e.getMessage());
+                }
+            }
         }
     }
 }

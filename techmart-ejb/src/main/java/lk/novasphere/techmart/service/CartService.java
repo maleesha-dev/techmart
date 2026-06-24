@@ -2,15 +2,15 @@ package lk.novasphere.techmart.service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import jakarta.ejb.PostActivate;
-import jakarta.ejb.PrePassivate;
-import jakarta.ejb.Stateful;
+import jakarta.enterprise.context.SessionScoped; // 💡 වෙනස් කරන ලදී
+import jakarta.inject.Named; // 💡 වෙනස් කරන ලදී
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-@Stateful
+@Named
+@SessionScoped
 public class CartService implements Serializable {
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = Logger.getLogger(CartService.class.getName());
@@ -20,7 +20,7 @@ public class CartService implements Serializable {
     @PostConstruct
     public void init() {
         cartItems = new HashMap<>();
-        LOGGER.info("CartService initialized...");
+        LOGGER.info("CartService initialized for session...");
     }
 
     public void addItem(Long productId, Integer quantity) {
@@ -42,20 +42,8 @@ public class CartService implements Serializable {
         LOGGER.info("Cart has been cleared.");
     }
 
-    //OPTIMIZATION
-    @PrePassivate
-    public void prePassivate() {
-
-        LOGGER.info("@PrePassivate: Cart is being saved to storage to save memory.");
-    }
-
-    @PostActivate
-    public void postActivate() {
-        LOGGER.info("@PostActivate: Cart has been restored back to memory.");
-    }
-
     @PreDestroy
     public void destroy() {
-        LOGGER.info("@PreDestroy: CartService Bean is being destroyed.");
+        LOGGER.info("CartService Bean is being destroyed.");
     }
 }
