@@ -3,7 +3,6 @@
   User: Maleesha
   Date: 6/23/2026
   Time: 12:56 PM
-  To change this template use File | Settings | File Templates.
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.Map" %>
@@ -11,64 +10,86 @@
 <html>
 <head>
     <title>TechMart - Checkout</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/style.css">
 </head>
 <body>
-<h2>🛒 Your Shopping Cart & Checkout</h2>
+<div class="topbar"></div>
+<div class="page page-checkout">
+    <h2><span class="bracket">[</span>Your Cart &amp; Checkout<span class="bracket">]</span></h2>
 
-<%
-    Map<Product, Integer> items = (Map<Product, Integer>) request.getAttribute("cartProducts");
-
-    if (items == null || items.isEmpty()) {
-%>
-<p>Your cart is empty! <a href="products">Go back to products</a></p>
-<%
-} else {
-%>
-<table border="1" cellpadding="8" style="width: 60%; text-align: left; border-collapse: collapse;">
-    <tr style="background-color: #f2f2f2;">
-        <th>Product Name</th>
-        <th>Price</th>
-        <th>Quantity</th>
-        <th>Total Price</th>
-    </tr>
     <%
-        double grandTotal = 0.0;
-        for (Map.Entry<Product, Integer> entry : items.entrySet()) {
-            Product product = entry.getKey();
-            Integer quantity = entry.getValue();
-            double itemTotal = product.getPrice() * quantity;
-            grandTotal += itemTotal;
+        Map<Product, Integer> items = (Map<Product, Integer>) request.getAttribute("cartProducts");
+
+        if (items == null || items.isEmpty()) {
     %>
-    <tr>
-        <td><b><%= product.getName() %></b></td>
-        <td>Rs. <%= product.getPrice() %></td>
-        <td><%= quantity %></td>
-        <td>Rs. <%= itemTotal %></td>
-    </tr>
+    <div class="empty-state">
+        <p>Your cart is empty.</p>
+        <a href="products">Go back to products &rarr;</a>
+    </div>
+    <%
+    } else {
+    %>
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total Price</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <%
+                double grandTotal = 0.0;
+                for (Map.Entry<Product, Integer> entry : items.entrySet()) {
+                    Product product = entry.getKey();
+                    Integer quantity = entry.getValue();
+                    double itemTotal = product.getPrice() * quantity;
+                    grandTotal += itemTotal;
+            %>
+            <tr>
+                <td class="name-cell"><%= product.getName() %></td>
+                <td class="num-cell">Rs. <%= product.getPrice() %></td>
+                <td class="num-cell"><%= quantity %></td>
+                <td class="num-cell">Rs. <%= itemTotal %></td>
+                <td>
+                    <form action="${pageContext.request.contextPath}/remove-from-cart" method="POST">
+                        <input type="hidden" name="productId" value="<%= product.getId() %>">
+                        <button type="submit" class="btn-remove">&times; Remove</button>
+                    </form>
+                </td>
+            </tr>
+            <%
+                }
+            %>
+            <tr class="grand-row">
+                <td colspan="3" class="grand-label">Grand Total</td>
+                <td class="num-cell">Rs. <%= grandTotal %></td>
+                <td></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="customer-block">
+        <h3>Customer Details</h3>
+        <form action="checkout" method="POST">
+            <div class="field-group">
+                <label for="customerName">Your Name</label>
+                <input type="text" id="customerName" name="customerName" required placeholder="Enter your name">
+            </div>
+            <button type="submit" class="btn-place">Place Order</button>
+        </form>
+    </div>
     <%
         }
     %>
-    <tr style="background-color: #e6ffe6; font-weight: bold;">
-        <td colspan="3" style="text-align: right;">Grand Total:</td>
-        <td>Rs. <%= grandTotal %></td>
-    </tr>
-</table>
 
-<br><br>
-<h3>👤 Customer Details</h3>
-<form action="checkout" method="POST">
-    <label for="customerName">Your Name:</label>
-    <input type="text" id="customerName" name="customerName" required placeholder="Enter your name" style="padding: 5px; width: 250px;">
-    <br><br>
-    <button type="submit" style="background-color: green; color: white; padding: 10px 20px; font-weight: bold; border: none; cursor: pointer;">
-        Place Order
-    </button>
-</form>
-<%
-    }
-%>
-
-<br><br>
-<a href="products">⬅️ Continue Shopping</a>
+    <a href="products" class="continue-link">&larr; Continue Shopping</a>
+</div>
 </body>
 </html>

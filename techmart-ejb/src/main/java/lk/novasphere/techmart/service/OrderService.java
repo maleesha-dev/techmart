@@ -9,9 +9,12 @@ import lk.novasphere.techmart.entity.Product;
 import lk.novasphere.techmart.messaging.OrderProducer;
 
 import java.util.Map;
+import java.util.logging.Logger;
 
 @Stateless
 public class OrderService {
+
+    private static final Logger LOGGER = Logger.getLogger(OrderService.class.getName());
 
     @PersistenceContext
     private EntityManager em;
@@ -22,38 +25,45 @@ public class OrderService {
     @EJB
     private OrderProducer orderProducer;
 
+    @EJB
+    private TechMartAnalyticsService analyticsService;
+
     public Order checkout(String customerName, Map<Long, Integer> cartItems) {
+
+        long startTime = System.currentTimeMillis();
+
         Order order = new Order();
         order.setCustomerName(customerName);
         order.setStatus("PENDING");
 
         double totalAmount = 0.0;
-        boolean isStockAvailable = true;
+        boolean transactionSuccess = true;
 
         for (Map.Entry<Long, Integer> entry : cartItems.entrySet()) {
             Long productId = entry.getKey();
             Integer orderQty = entry.getValue();
 
-            Product product = em.find(Product.class, productId);
-            if (product == null || product.getStock() < orderQty) {
-                isStockAvailable = false;
+            boolean deducted = inventoryCache.deductStock(productId, orderQty);
+            if (!deducted) {
+                transactionSuccess = false;
+                LOGGER.warning("[STOCK OUT] : Insufficient stock in Cache for Product ID: " + productId);
                 break;
             }
         }
 
-        if (isStockAvailable) {
+        if (transactionSuccess) {
             for (Map.Entry<Long, Integer> entry : cartItems.entrySet()) {
                 Long productId = entry.getKey();
                 Integer orderQty = entry.getValue();
 
                 Product product = em.find(Product.class, productId);
-                totalAmount += product.getPrice() * orderQty;
+                if (product != null) {
+                    totalAmount += product.getPrice() * orderQty;
 
-                int newStock = product.getStock() - orderQty;
-                product.setStock(newStock);
-                em.merge(product);
-
-                inventoryCache.updateStock(productId, newStock);
+                    int newStock = product.getStock() - orderQty;
+                    product.setStock(newStock);
+                    em.merge(product);
+                }
             }
 
             order.setTotalAmount(totalAmount);
@@ -62,18 +72,28 @@ public class OrderService {
             em.persist(order);
             em.flush();
 
+            try {
+                orderProducer.sendOrderMessage(order.getId(), customerName, totalAmount);
+                LOGGER.info("[JMS SUCCESS] : Order message sent to ActiveMQ Queue.");
+            } catch (Exception e) {
+                LOGGER.severe("[JMS ERROR] : Producer Call Failed: " + e.getMessage());
+            }
 
             try {
-
-                orderProducer.sendOrderMessage(order.getId(), customerName, totalAmount);
-                System.out.println("Order success message delegated to OrderProducer.");
+                analyticsService.processOrderAnalytics(order.getId());
             } catch (Exception e) {
-                System.err.println("Producer Call Error: " + e.getMessage());
+                LOGGER.warning("[ASYNC WARN] : Analytics execution skipped: " + e.getMessage());
             }
 
         } else {
             order.setStatus("FAILED");
+            LOGGER.severe("[ORDER FAILED] : Checkout failed due to insufficient stock for " + customerName);
         }
+
+        long endTime = System.currentTimeMillis();
+        long executionTime = endTime - startTime;
+
+        LOGGER.info("[METRICS] : checkout() execution time for client '" + customerName + "': " + executionTime + " ms");
 
         return order;
     }

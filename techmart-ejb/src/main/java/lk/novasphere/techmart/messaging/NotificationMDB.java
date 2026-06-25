@@ -34,8 +34,8 @@ public class NotificationMDB implements MessageListener {
                 String payload = textMessage.getText();
 
                 System.out.println("\n==========================================================");
-                System.out.println("📢 [NOTIFICATION SERVICE] : ActiveMQ Asynchronous Notification");
-                System.out.println("✉️ Payload: " + payload);
+                System.out.println("[NOTIFICATION SERVICE] : ActiveMQ Asynchronous Notification");
+                System.out.println("[Received Payload] : " + payload);
                 System.out.println("==========================================================\n");
             }
         } catch (Exception e) {
