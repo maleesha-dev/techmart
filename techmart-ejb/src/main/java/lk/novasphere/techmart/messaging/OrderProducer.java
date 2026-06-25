@@ -30,10 +30,10 @@ public class OrderProducer {
             TextMessage textMessage = session.createTextMessage(fullMessage);
 
             producer.send(textMessage);
-            LOGGER.info("🟢 Message successfully pushed to OrderQueue for Order #" + orderId);
+            LOGGER.info("Message successfully pushed to OrderQueue for Order #" + orderId);
 
         } catch (Exception e) {
-            LOGGER.severe("🔴 Message sending failed: " + e.getMessage());
+            LOGGER.severe("Message sending failed: " + e.getMessage());
             e.printStackTrace();
         } finally {
             if (connection != null) {

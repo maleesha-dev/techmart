@@ -1,24 +1,15 @@
 package lk.novasphere.techmart.service;
 
-import jakarta.annotation.Resource;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
-import jakarta.jms.ConnectionFactory;
-import jakarta.jms.JMSConnectionFactoryDefinition;
-import jakarta.jms.JMSContext;
-import jakarta.jms.Queue;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lk.novasphere.techmart.entity.Order;
 import lk.novasphere.techmart.entity.Product;
+import lk.novasphere.techmart.messaging.OrderProducer;
 
 import java.util.Map;
 
-
-@JMSConnectionFactoryDefinition(
-        name = "java:app/jms/ActiveMQConnectionFactory",
-        resourceAdapter = "activemq-rar-6.2.6"
-)
 @Stateless
 public class OrderService {
 
@@ -28,12 +19,8 @@ public class OrderService {
     @EJB
     private InventoryCache inventoryCache;
 
-
-    @Resource(lookup = "jms/__defaultConnectionFactory")
-    private ConnectionFactory activeMQFactory;
-
-    @Resource(lookup = "jms/OrderQueue")
-    private Queue notificationQueue;
+    @EJB
+    private OrderProducer orderProducer;
 
     public Order checkout(String customerName, Map<Long, Integer> cartItems) {
         Order order = new Order();
@@ -60,7 +47,6 @@ public class OrderService {
                 Integer orderQty = entry.getValue();
 
                 Product product = em.find(Product.class, productId);
-
                 totalAmount += product.getPrice() * orderQty;
 
                 int newStock = product.getStock() - orderQty;
@@ -76,18 +62,13 @@ public class OrderService {
             em.persist(order);
             em.flush();
 
+
             try {
-                String messagePayload = "OrderID:" + order.getId() + "|Customer:" + customerName + "|Amount:" + totalAmount;
 
-
-                try (JMSContext jmsContext = activeMQFactory.createContext()) {
-                    jmsContext.createProducer().send(notificationQueue, messagePayload);
-                }
-
-                System.out.println("Order success message sent to OrderQueue: " + messagePayload);
-
+                orderProducer.sendOrderMessage(order.getId(), customerName, totalAmount);
+                System.out.println("Order success message delegated to OrderProducer.");
             } catch (Exception e) {
-                System.err.println("Producer Error: " + e.getMessage());
+                System.err.println("Producer Call Error: " + e.getMessage());
             }
 
         } else {
