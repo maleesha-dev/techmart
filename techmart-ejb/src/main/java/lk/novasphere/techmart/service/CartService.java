@@ -2,8 +2,8 @@ package lk.novasphere.techmart.service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import jakarta.enterprise.context.SessionScoped; // 💡 වෙනස් කරන ලදී
-import jakarta.inject.Named; // 💡 වෙනස් කරන ලදී
+import jakarta.enterprise.context.SessionScoped;
+import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
